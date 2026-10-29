@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>클린티켓 - KBO 매크로 차단 & 팬 우대 예매 플랫폼</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Noto Sans KR -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body { 
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #030712;
+        }
+        .gradient-gold { 
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%); 
+        }
+        .gradient-gold-text {
+            background: linear-gradient(135deg, #fef08a 0%, #f59e0b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .bg-gold-glow { 
+            box-shadow: 0 0 35px rgba(245, 158, 11, 0.15); 
+        }
+        .bg-rose-glow {
+            box-shadow: 0 0 35px rgba(244, 63, 94, 0.15);
+        }
+        .decoy-seat { 
+            opacity: 0.25; 
+            cursor: not-allowed; 
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col selection:bg-amber-500 selection:text-slate-900 custom-scrollbar">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('fan-tier')">
+                <div class="w-10 h-10 rounded-2xl gradient-gold flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid fa-shield-cat"></i>
+                </div>
+                <div>
+                    <span class="text-lg font-black tracking-tight text-white flex items-center gap-2">
+                        CLEAN TICKET <span class="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold">KBO 공식 인증</span>
+                    </span>
+                    <p class="text-[10px] text-slate-400">매크로·암표 제로 KBO 야구 예매 플랫폼</p>
+                </div>
+            </div>
+
+            <!-- Main Navigation Tabs -->
+            <nav class="hidden md:flex items-center space-x-2 text-sm font-semibold">
+                <button id="nav-fan-tier" onclick="switchTab('fan-tier')" class="px-4 py-2 rounded-xl transition-all text-amber-300 bg-amber-500/15 border border-amber-500/40 font-bold">
+                    <i class="fa-solid fa-crown mr-2"></i>팬 티어 & 선예매
+                </button>
+                <button id="nav-bounty-hunter" onclick="switchTab('bounty-hunter')" class="px-4 py-2 rounded-xl transition-all text-slate-400 hover:text-white hover:bg-slate-800/60">
+                    <i class="fa-solid fa-user-ninja mr-2 text-rose-400"></i>암표 암행어사 (신고·보상)
+                </button>
+                <button id="nav-anti-macro" onclick="switchTab('anti-macro')" class="px-4 py-2 rounded-xl transition-all text-slate-400 hover:text-white hover:bg-slate-800/60">
+                    <i class="fa-solid fa-robot mr-2 text-emerald-400"></i>클린 예매 & 매크로 검증
+                </button>
+            </nav>
+
+            <!-- User Quick Badge -->
+            <div class="flex items-center space-x-3">
+                <div class="hidden sm:flex items-center space-x-2 bg-slate-800/90 border border-slate-700/80 rounded-full px-3.5 py-1.5 text-xs shadow-inner">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span class="text-slate-400">내 등급:</span>
+                    <strong class="text-amber-400 font-bold" id="user-tier-badge"><i class="fa-solid fa-trophy text-[10px] mr-1"></i>GOLD Fan</strong>
+                </div>
+                <button onclick="openCheckinModal()" class="gradient-gold hover:opacity-95 text-slate-950 font-black text-xs px-4 py-2.5 rounded-xl transition-all shadow-md shadow-amber-500/10 flex items-center gap-1.5">
+                    <i class="fa-solid fa-qrcode"></i>
+                    <span>직관 인증하기</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Subnav Bar -->
+    <div class="md:hidden flex bg-slate-900 border-b border-slate-800 p-2 space-x-1 text-xs font-semibold overflow-x-auto">
+        <button id="mobile-nav-fan-tier" onclick="switchTab('fan-tier')" class="flex-1 min-w-[120px] py-2 px-2 text-center rounded-lg bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
+            <i class="fa-solid fa-crown mr-1"></i>팬 티어 선예매
+        </button>
+        <button id="mobile-nav-bounty-hunter" onclick="switchTab('bounty-hunter')" class="flex-1 min-w-[120px] py-2 px-2 text-center rounded-lg text-slate-400">
+            <i class="fa-solid fa-user-ninja mr-1 text-rose-400"></i>암표 암행어사
+        </button>
+        <button id="mobile-nav-anti-macro" onclick="switchTab('anti-macro')" class="flex-1 min-w-[120px] py-2 px-2 text-center rounded-lg text-slate-400">
+            <i class="fa-solid fa-robot mr-1 text-emerald-400"></i>클린 예매
+        </button>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-1 w-full">
+
+        <!-- TAB 1: 팬 티어 & 선예매 대시보드 (Fan Tier & Priority Booking) -->
+        <section id="tab-fan-tier" class="space-y-8">
+            <!-- Hero Banner & Tier Card -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- User Tier Card -->
+                <div class="bg-gradient-to-br from-slate-900 via-slate-900/90 to-amber-950/30 border border-amber-500/40 rounded-3xl p-6 relative overflow-hidden bg-gold-glow flex flex-col justify-between">
+                    <div class="absolute -right-6 -bottom-6 text-slate-800/20 text-9xl pointer-events-none">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <span class="text-[11px] font-extrabold text-amber-300 bg-amber-500/20 border border-amber-500/40 px-3 py-1 rounded-full tracking-wider">
+                                KBO VERIFIED FAN
+                            </span>
+                            <span class="text-xs text-slate-400 font-mono">ID: #KBO-88392</span>
+                        </div>
+                        <div class="mt-5 flex items-center space-x-4">
+                            <div class="w-16 h-16 rounded-2xl gradient-gold flex items-center justify-center text-slate-950 text-3xl font-black shadow-lg shadow-amber-500/20">
+                                <i class="fa-solid fa-crown"></i>
+                            </div>
+                            <div>
+                                <h2 class="text-2xl font-black text-white tracking-tight" id="display-user-tier">GOLD FAN TIER</h2>
+                                <p class="text-xs text-amber-300/90 font-medium mt-0.5">상위 5% 최우수 클린 직관 팬</p>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="mt-6 space-y-2">
+                            <div class="flex justify-between text-xs font-bold">
+                                <span class="text-slate-300">다음 등급 (PLATINUM)까지</span>
+                                <span class="text-amber-400 font-mono" id="tier-score-text">850 / 1000 P</span>
+                            </div>
+                            <div class="w-full bg-slate-950 rounded-full h-3.5 overflow-hidden border border-slate-800 p-0.5">
+                                <div id="tier-progress-bar" class="gradient-gold h-full rounded-full transition-all duration-700 shadow-sm" style="width: 85%;"></div>
+                            </div>
+                            <p class="text-[11px] text-slate-400 flex items-center justify-between pt-1 font-medium">
+                                <span><i class="fa-solid fa-location-dot text-amber-400 mr-1"></i>직관 인증 17회</span>
+                                <span><i class="fa-solid fa-shield-check text-emerald-400 mr-1"></i>클린 예매 12회</span>
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Tier Privileges Badge -->
+                    <div class="mt-6 pt-4 border-t border-slate-800/80 grid grid-cols-2 gap-3.5 text-xs">
+                        <div class="bg-slate-950/70 p-3 rounded-2xl border border-amber-500/20">
+                            <span class="text-slate-400 block text-[10px] font-semibold">선예매 혜택</span>
+                            <strong class="text-amber-300 font-bold text-xs"><i class="fa-solid fa-clock mr-1"></i>일반 오픈 15분 전</strong>
+                        </div>
+                        <div class="bg-slate-950/70 p-3 rounded-2xl border border-amber-500/20">
+                            <span class="text-slate-400 block text-[10px] font-semibold">매크로 가산점</span>
+                            <strong class="text-emerald-400 font-bold text-xs"><i class="fa-solid fa-shield-check mr-1"></i>보안 검증 통과</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Priority Booking Match Showcase -->
+                <div class="lg:col-span-2 bg-slate-900 border border-slate-800/80 rounded-3xl p-6 md:p-7 flex flex-col justify-between space-y-5">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
+                        <div>
+                            <span class="text-xs font-black text-amber-300 bg-amber-500/20 border border-amber-500/30 px-3 py-1 rounded-full inline-block mb-2">
+                                🔥 이번 주 핫 매치 선예매 일정
+                            </span>
+                            <h3 class="text-xl md:text-2xl font-black text-white">잠실 라이벌전: LG 트윈스 vs 두산 베어스</h3>
+                        </div>
+                        <!-- Priority Timer -->
+                        <div class="bg-amber-500/10 border border-amber-500/40 px-4 py-2.5 rounded-2xl text-right">
+                            <span class="text-[10px] text-amber-300 font-bold block uppercase tracking-wider">GOLD 티어 선예매까지</span>
+                            <div class="text-2xl font-mono font-black text-amber-400 tracking-wider" id="priority-timer">00:14:32</div>
+                        </div>
+                    </div>
+
+                    <!-- Match Info Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-rose-600/20 text-rose-400 border border-rose-500/30 rounded-2xl flex items-center justify-center text-xl font-black shrink-0">
+                                LG
+                            </div>
+                            <div class="flex-1">
+                                <span class="text-xs text-slate-400 font-mono">2026.11.01 (일) 14:00</span>
+                                <h4 class="font-bold text-white text-sm">잠실 야구장 홈경기</h4>
+                                <p class="text-[11px] text-emerald-400 font-semibold mt-1 flex items-center gap-1">
+                                    <i class="fa-solid fa-shield"></i> 매크로 미끼(Decoy) 방어 적용
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-4 space-y-2 text-xs">
+                            <div class="flex justify-between text-slate-300">
+                                <span class="text-slate-400">선예매 오픈 (GOLD 이상):</span>
+                                <strong class="text-amber-400 font-bold">오늘 13:45 (15분 전)</strong>
+                            </div>
+                            <div class="flex justify-between text-slate-300">
+                                <span class="text-slate-400">일반 예매 오픈:</span>
+                                <span class="text-slate-300">오늘 14:00</span>
+                            </div>
+                            <div class="flex justify-between text-slate-300">
+                                <span class="text-slate-400">클린 전용 할당석:</span>
+                                <span class="text-white font-mono font-bold">3,500석</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col sm:flex-row gap-3 pt-1">
+                        <button onclick="startPriorityBooking()" class="flex-1 gradient-gold text-slate-950 font-black py-4 px-6 rounded-2xl hover:opacity-95 transition-all text-sm shadow-lg shadow-amber-500/10 flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-ticket"></i>
+                            <span>[GOLD 전용] 15분 선예매 즉시 진입</span>
+                        </button>
+                        <button onclick="openCheckinModal()" class="bg-slate-800 hover:bg-slate-700/80 text-slate-200 font-bold py-4 px-5 rounded-2xl border border-slate-700/80 text-sm transition-all flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-location-dot text-amber-400"></i>
+                            <span>직관 인증하고 포인트 쌓기</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fan Tier System Explanation -->
+            <div class="bg-slate-900 border border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-5">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-layer-group text-amber-400"></i> KBO 클린 팬 티어(Fan Tier) 작동 구조
+                </h3>
+                <p class="text-xs md:text-sm text-slate-400 leading-relaxed">
+                    대포 계정과 매크로 업자의 무차별 유입을 차단하기 위해, 실제 경기장 방문 인증(GPS 위치 및 티켓 스캔) 기반으로 팬 등급을 부여합니다.
+                    순수 직관 팬일수록 더 빠른 선예매 시간과 매크로 차단 검증 가산점을 부여받습니다.
+                </p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+                    <div class="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-5 text-center space-y-2">
+                        <span class="text-xs bg-slate-800 text-slate-400 px-3 py-1 rounded-full font-bold inline-block">BRONZE</span>
+                        <h4 class="font-bold text-slate-300 text-sm">일반 팬</h4>
+                        <p class="text-[11px] text-slate-500">신규 가입 유저<br>일반 예매 시간에 참여 가능</p>
+                    </div>
+                    <div class="bg-slate-950/80 border border-blue-500/30 rounded-2xl p-5 text-center space-y-2">
+                        <span class="text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30 px-3 py-1 rounded-full font-bold inline-block">SILVER</span>
+                        <h4 class="font-bold text-blue-300 text-sm">직관 입문 팬</h4>
+                        <p class="text-[11px] text-slate-400">직관 3회 이상 인증<br>일반 오픈 5분 전 선예매</p>
+                    </div>
+                    <div class="bg-slate-950/90 border border-amber-500/60 rounded-2xl p-5 text-center space-y-2 bg-amber-500/5 shadow-md">
+                        <span class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/40 px-3 py-1 rounded-full font-bold inline-block">GOLD (현재)</span>
+                        <h4 class="font-bold text-amber-400 text-sm">우수 직관 팬</h4>
+                        <p class="text-[11px] text-slate-300">직관 10회 이상 인증<br><strong class="text-amber-300">일반 오픈 15분 전 선예매</strong></p>
+                    </div>
+                    <div class="bg-slate-950/80 border border-purple-500/30 rounded-2xl p-5 text-center space-y-2">
+                        <span class="text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30 px-3 py-1 rounded-full font-bold inline-block">PLATINUM</span>
+                        <h4 class="font-bold text-purple-300 text-sm">열혈 구단 대표 팬</h4>
+                        <p class="text-[11px] text-slate-400">직관 20회 + 멤버십 연동<br>일반 오픈 30분 전 선예매</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- TAB 2: 암표 암행어사 (Bounty Hunter Scalper Report & Reward) -->
+        <section id="tab-bounty-hunter" class="hidden space-y-8">
+            <!-- Header Banner -->
+            <div class="bg-gradient-to-r from-rose-950/80 via-slate-900 to-slate-900 border border-rose-500/40 rounded-3xl p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-rose-glow">
+                <div class="space-y-2.5 max-w-2xl">
+                    <span class="text-xs font-black bg-rose-500/20 text-rose-300 border border-rose-500/40 px-3.5 py-1 rounded-full tracking-wider">
+                        <i class="fa-solid fa-user-ninja mr-1.5"></i> 암표 암행어사 보상 제도
+                    </span>
+                    <h2 class="text-2xl md:text-3xl font-black text-white tracking-tight">암표 제보하고 '보상 티켓 정가 구매권' 받자!</h2>
+                    <p class="text-xs md:text-sm text-slate-300 leading-relaxed">
+                        중고 거래 사이트나 SNS에 프리미엄(P)을 붙여 파는 암표 글을 제보해 주세요.
+                        검증 후 티켓이 강제 취소되면, <strong class="text-amber-400">최초 신고자에게 해당 취소표의 정가 구매 우선권</strong>을 지급합니다.
+                    </p>
+                </div>
+                <button onclick="openReportModal()" class="w-full md:w-auto bg-rose-600 hover:bg-rose-500 text-white font-extrabold px-6 py-4 rounded-2xl text-sm transition-all shadow-lg shadow-rose-600/20 flex items-center justify-center space-x-2 shrink-0">
+                    <i class="fa-solid fa-flag text-lg"></i>
+                    <span>암표 판매글 지금 제보하기</span>
+                </button>
+            </div>
+
+            <!-- Report Progress Live Dashboard -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- User's Rewards Summary -->
+                <div class="bg-slate-900 border border-slate-800/80 rounded-3xl p-6 space-y-5">
+                    <h3 class="text-base font-bold text-white flex items-center justify-between border-b border-slate-800/80 pb-4">
+                        <span><i class="fa-solid fa-award text-amber-400 mr-2"></i>나의 암행어사 활동 현황</span>
+                        <span class="text-xs font-mono text-emerald-400 font-bold">적발률 100%</span>
+                    </h3>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-slate-950/80 p-4 rounded-2xl border border-slate-800/80 text-center">
+                            <span class="text-xs text-slate-400 block mb-1">총 신고 건수</span>
+                            <span class="text-2xl font-black font-mono text-white">3 건</span>
+                        </div>
+                        <div class="bg-slate-950/80 p-4 rounded-2xl border border-rose-500/30 text-center">
+                            <span class="text-xs text-slate-400 block mb-1">적발 및 강제 취소</span>
+                            <span class="text-2xl font-black font-mono text-rose-400">2 건</span>
+                        </div>
+                    </div>
+
+                    <!-- Reward Pass Active Box -->
+                    <div class="bg-gradient-to-br from-amber-500/10 to-slate-950 border border-amber-500/40 p-5 rounded-2xl space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-amber-400"><i class="fa-solid fa-ticket mr-1"></i>획득한 보상 구매권</span>
+                            <span class="text-[10px] bg-amber-500 text-slate-950 px-2.5 py-0.5 rounded-full font-black">보유 1매</span>
+                        </div>
+                        <p class="text-xs text-slate-200 font-semibold">LG vs 두산 (1루 응원석 08열 14번)</p>
+                        <p class="text-[11px] text-slate-400 leading-normal">암표상 적발로 회수된 표입니다. 정가(15,000원)로 바로 구매 가능합니다.</p>
+                        <button onclick="claimRewardTicket()" class="w-full mt-2 gradient-gold text-slate-950 font-black py-3 rounded-xl text-xs hover:opacity-95 transition-all shadow-md">
+                            보상 티켓 정가 결제하기
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live Report Timeline Status -->
+                <div class="lg:col-span-2 bg-slate-900 border border-slate-800/80 rounded-3xl p-6 space-y-4">
+                    <div class="flex justify-between items-center border-b border-slate-800/80 pb-4">
+                        <h3 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-rose-400"></i> 내가 신고한 암표 처리 추적
+                        </h3>
+                        <span class="text-xs text-slate-400">실시간 처리 상태 연동</span>
+                    </div>
+
+                    <div class="space-y-3.5" id="report-list-container">
+                        <!-- Report Item 1 (Cancelled & Rewarded) -->
+                        <div class="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+                            <div class="flex flex-wrap justify-between items-start gap-2">
+                                <div>
+                                    <span class="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-0.5 rounded font-mono">신고번호 #REP-9021</span>
+                                    <h4 class="font-bold text-white text-sm mt-1">중고나라 LG vs 두산 2연석 (정가 15,000원 -> 판매가 80,000원)</h4>
+                                </div>
+                                <span class="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full font-bold">
+                                    <i class="fa-solid fa-circle-check mr-1"></i>적발 완료 (보상 지급)
+                                </span>
+                            </div>
+                            <!-- Process Steps Tracker -->
+                            <div class="grid grid-cols-3 gap-2 text-center text-[11px] pt-2 border-t border-slate-800/60">
+                                <div class="text-slate-400">
+                                    <span class="block text-slate-500 font-mono text-[10px]">1단계</span>
+                                    <span>신고 접수 완료</span>
+                                </div>
+                                <div class="text-slate-400">
+                                    <span class="block text-slate-500 font-mono text-[10px]">2단계</span>
+                                    <span>예매 내역 추적 성공</span>
+                                </div>
+                                <div class="text-emerald-400 font-bold">
+                                    <span class="block text-emerald-500 font-mono text-[10px]">3단계</span>
+                                    <span>티켓 회수 & 보상 매칭</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Report Item 2 (Under Investigation) -->
+                        <div class="bg-slate-950/80 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+                            <div class="flex flex-wrap justify-between items-start gap-2">
+                                <div>
+                                    <span class="text-[10px] bg-slate-800 text-slate-400 px-2.5 py-0.5 rounded font-mono">신고번호 #REP-9044</span>
+                                    <h4 class="font-bold text-white text-sm mt-1">X(트위터) 암표 매크로 싹쓸이 티켓 판매글</h4>
+                                </div>
+                                <span class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full font-bold animate-pulse">
+                                    <i class="fa-solid fa-magnifying-glass mr-1"></i>매크로 IP 추적 중
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 text-center text-[11px] pt-2 border-t border-slate-800/60">
+                                <div class="text-slate-300 font-semibold">
+                                    <span class="block text-slate-500 font-mono text-[10px]">1단계</span>
+                                    <span>신고 접수 완료</span>
+                                </div>
+                                <div class="text-amber-400 font-bold">
+                                    <span class="block text-amber-500 font-mono text-[10px]">2단계</span>
+                                    <span>계좌/좌석 대조 중</span>
+                                </div>
+                                <div class="text-slate-600">
+                                    <span class="block text-slate-700 font-mono text-[10px]">3단계</span>
+                                    <span>강제 취소 대기</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- TAB 3: 클린 예매 & 매크로 검증 시뮬레이터 (Anti-Macro Booking) -->
+        <section id="tab-anti-macro" class="hidden space-y-8">
+            <div class="bg-slate-900 border border-slate-800/80 rounded-3xl p-6 md:p-8 space-y-6">
+                <div class="flex flex-wrap justify-between items-center gap-4 border-b border-slate-800/80 pb-5">
+                    <div>
+                        <span class="text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-3 py-1 rounded-full font-bold inline-block mb-2">
+                            <i class="fa-solid fa-microchip mr-1.5"></i> AI 행동패턴 분석 & 디코이(Decoy) 좌석 기술
+                        </span>
+                        <h2 class="text-xl md:text-2xl font-black text-white">매크로 차단 클린 예매 시뮬레이터</h2>
+                        <p class="text-xs text-slate-400 mt-1">마우스 궤적, 클릭 속도, 그리고 매크로 전용 미끼 좌석을 활용해 매크로 봇을 실시간으로 감지합니다.</p>
+                    </div>
+
+                    <!-- Bot Mode Toggle Simulator -->
+                    <div class="flex items-center space-x-3 bg-slate-950 p-3 rounded-2xl border border-slate-800">
+                        <span class="text-xs font-bold text-slate-300">매크로 봇 모드 테스트:</span>
+                        <button id="macro-toggle-btn" onclick="toggleMacroBotMode()" class="bg-slate-800 text-slate-400 px-4 py-2 rounded-xl font-bold text-xs border border-slate-700 transition-all">
+                            OFF (사람 클릭)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Interactive Baseball Stadium Seat Picker Simulator -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Seat Map Area -->
+                    <div class="lg:col-span-2 bg-slate-950 border border-slate-800/80 rounded-2xl p-6 flex flex-col items-center justify-center relative min-h-[340px]">
+                        <div class="text-center mb-6">
+                            <span class="text-xs text-slate-500 block uppercase font-mono font-bold tracking-widest">GROUND STAGE / HOME PLATE</span>
+                            <div class="w-56 h-3.5 bg-gradient-to-r from-amber-600/30 via-amber-500/60 to-amber-600/30 rounded-full mx-auto mt-2 shadow-sm"></div>
+                        </div>
+
+                        <!-- Seat Grid -->
+                        <div class="grid grid-cols-6 gap-2.5 sm:gap-3.5 max-w-md w-full" id="stadium-seat-grid">
+                            <!-- JS Generated seats including DECOY seats -->
+                        </div>
+
+                        <div class="flex flex-wrap justify-center gap-4 text-xs text-slate-400 mt-8 pt-4 border-t border-slate-900 w-full">
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3.5 h-3.5 bg-emerald-500/30 border border-emerald-500 rounded"></span>
+                                <span>선택 가능</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3.5 h-3.5 bg-rose-500/30 border border-rose-500/50 rounded"></span>
+                                <span>매크로 미끼(Decoy)</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="w-3.5 h-3.5 bg-slate-800 border border-slate-700 rounded"></span>
+                                <span>예매 완료</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Security Telemetry Box -->
+                    <div class="bg-slate-950 border border-slate-800/80 rounded-2xl p-5 space-y-4 flex flex-col justify-between">
+                        <div class="space-y-3">
+                            <h3 class="text-sm font-bold text-white flex items-center gap-2 border-b border-slate-800 pb-3">
+                                <i class="fa-solid fa-radar text-emerald-400 animate-pulse"></i> 실시간 AI 보안 감지 로그
+                            </h3>
+                            <div class="space-y-2.5 text-xs font-mono bg-slate-900/60 p-3.5 rounded-xl border border-slate-800">
+                                <div class="flex justify-between text-slate-400">
+                                    <span>클릭 반응 속도:</span>
+                                    <span class="text-emerald-400 font-bold" id="telemetry-speed">340 ms (정상)</span>
+                                </div>
+                                <div class="flex justify-between text-slate-400">
+                                    <span>마우스 커서 궤적:</span>
+                                    <span class="text-emerald-400 font-bold" id="telemetry-curve">곡선 (Human)</span>
+                                </div>
+                                <div class="flex justify-between text-slate-400">
+                                    <span>매크로 위험도 점수:</span>
+                                    <span class="text-emerald-400 font-bold" id="telemetry-risk">2% (안전)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900/80 border border-slate-800 p-4 rounded-xl text-xs space-y-2">
+                            <strong class="text-amber-400 block font-bold"><i class="fa-solid fa-lightbulb mr-1"></i> 디코이(Decoy) 미끼 기술이란?</strong>
+                            <p class="text-slate-400 text-[11px] leading-relaxed">
+                                화면 코드(DOM)에만 존재하는 가짜 좌석을 배치하여, 좌표 매크로 프로그램이 이를 클릭하는 즉시 차단 처리합니다.
+                            </p>
+                        </div>
+
+                        <button onclick="simulateBookingAttempt()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-extrabold py-3.5 rounded-xl text-xs transition-all shadow-md shadow-emerald-600/20">
+                            선택한 좌석 결제 시도하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800/80 bg-slate-900/50 py-8 mt-12 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4 space-y-2">
+            <p class="font-bold text-slate-400">CLEAN TICKET — KBO 매크로 및 암표 방지 건전한 직관 문화 조성 캠페인</p>
+            <p class="text-[10px] text-slate-600">본 웹앱은 팬 티어(Fan Tier) 및 암표 암행어사(Bounty Hunter) 시스템을 시뮬레이션하는 인터랙티브 프로토타입입니다.</p>
+        </div>
+    </footer>
+
+    <!-- MODAL 1: Check-in & Barcode Scan Modal -->
+    <div id="modal-checkin" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-amber-500/40 rounded-3xl max-w-md w-full p-6 md:p-7 space-y-5 shadow-2xl relative">
+            <button onclick="closeCheckinModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white transition-all">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center mx-auto text-2xl border border-amber-500/30">
+                    <i class="fa-solid fa-location-dot"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white">야구장 직관 위치 인증</h3>
+                <p class="text-xs text-slate-400">현재 위치(GPS) 및 모바일 티켓 바코드를 인증하여 팬 포인트를 획득하세요.</p>
+            </div>
+
+            <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-4 text-center space-y-3">
+                <div class="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs text-emerald-400 font-bold">
+                    <i class="fa-solid fa-satellite-dish mr-1 animate-pulse"></i> GPS 위치 확인됨: 잠실 야구장 내부
+                </div>
+                <!-- Simulated Barcode Scan Box -->
+                <div class="bg-slate-900 border border-dashed border-slate-700/80 p-5 rounded-xl space-y-2">
+                    <i class="fa-solid fa-barcode text-5xl text-slate-300"></i>
+                    <p class="text-[11px] text-slate-400">직관 모바일 티켓 바코드 검증 완료</p>
+                </div>
+            </div>
+
+            <button onclick="submitCheckin()" class="w-full gradient-gold text-slate-950 font-black py-3.5 rounded-xl text-sm hover:opacity-95 shadow-lg shadow-amber-500/20 transition-all">
+                인증 완료 (+150 Fan Point 획득)
+            </button>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Scalper Report Modal -->
+    <div id="modal-report" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-rose-500/40 rounded-3xl max-w-lg w-full p-6 md:p-7 space-y-5 shadow-2xl relative">
+            <button onclick="closeReportModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white transition-all">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            <div class="space-y-1">
+                <span class="text-xs text-rose-400 font-bold uppercase tracking-wider"><i class="fa-solid fa-user-ninja mr-1"></i> 암표 암행어사 제보</span>
+                <h3 class="text-xl font-bold text-white">불법 암표 판매글 신고하기</h3>
+                <p class="text-xs text-slate-400">제보 후 적발 시 해당 취소표의 정가 구매권 보상이 지급됩니다.</p>
+            </div>
+
+            <form onsubmit="handleReportSubmit(event)" class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-300 font-bold mb-1.5">판매 게시글 URL / 출처</label>
+                    <input type="text" required placeholder="예: https://중고나라.com/article/123456 또는 X(트위터) 계정" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:border-rose-500 outline-none transition-all">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-slate-300 font-bold mb-1.5">경기 정보</label>
+                        <select class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-slate-200 focus:border-rose-500 outline-none transition-all">
+                            <option>LG vs 두산 (잠실)</option>
+                            <option>SSG vs 키움 (문학)</option>
+                            <option>KIA vs 삼성 (챔필)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-bold mb-1.5">제시된 암표 가격</label>
+                        <input type="text" required placeholder="예: 80,000원 (정가 15,000원)" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-slate-200 focus:border-rose-500 outline-none transition-all">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-slate-300 font-bold mb-1.5">좌석 번호 및 추가 정보 (선택)</label>
+                    <textarea rows="2" placeholder="판매자가 올린 좌석 사진의 구역/열 번호 또는 입금 계좌정보" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-slate-200 focus:border-rose-500 outline-none transition-all"></textarea>
+                </div>
+
+                <div class="bg-rose-500/10 border border-rose-500/30 p-3 rounded-xl text-[11px] text-rose-300">
+                    <i class="fa-solid fa-circle-info mr-1"></i> 허위 제보 시 암행어사 자격이 제한될 수 있습니다.
+                </div>
+
+                <button type="submit" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-extrabold py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-rose-600/20">
+                    신고 접수하기
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification Overlay -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // State Management
+        let isMacroBot = false;
+        let selectedSeat = null;
+
+        // Navigation Tabs
+        function switchTab(tabId) {
+            const tabs = ['fan-tier', 'bounty-hunter', 'anti-macro'];
+            tabs.forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                
+                // Desktop Nav Buttons
+                const navBtn = document.getElementById(`nav-${t}`);
+                if (navBtn) {
+                    navBtn.className = "px-4 py-2 rounded-xl transition-all text-slate-400 hover:text-white hover:bg-slate-800/60";
+                }
+                
+                // Mobile Nav Buttons
+                const mNavBtn = document.getElementById(`mobile-nav-${t}`);
+                if (mNavBtn) {
+                    mNavBtn.className = "flex-1 min-w-[120px] py-2 px-2 text-center rounded-lg text-slate-400";
+                }
+            });
+
+            // Active Tab
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.className = "px-4 py-2 rounded-xl transition-all text-amber-300 bg-amber-500/15 border border-amber-500/40 font-bold";
+            }
+
+            const activeMobileNav = document.getElementById(`mobile-nav-${tabId}`);
+            if (activeMobileNav) {
+                activeMobileNav.className = "flex-1 min-w-[120px] py-2 px-2 text-center rounded-lg bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30";
+            }
+        }
+
+        // Toast Alert System
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgBg = 'bg-slate-900 border-slate-700 text-slate-100';
+            if (type === 'success') bgBg = 'bg-emerald-950 border-emerald-500/50 text-emerald-200';
+            if (type === 'error') bgBg = 'bg-rose-950 border-rose-500/50 text-rose-200';
+            if (type === 'gold') bgBg = 'bg-amber-950 border-amber-500/50 text-amber-200';
+
+            toast.className = `pointer-events-auto border px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold flex items-center space-x-2 transition-all duration-300 transform translate-y-2 ${bgBg}`;
+            toast.innerHTML = `<span>${message}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Modals
+        function openCheckinModal() { document.getElementById('modal-checkin').classList.remove('hidden'); }
+        function closeCheckinModal() { document.getElementById('modal-checkin').classList.add('hidden'); }
+
+        function openReportModal() { document.getElementById('modal-report').classList.remove('hidden'); }
+        function closeReportModal() { document.getElementById('modal-report').classList.add('hidden'); }
+
+        function submitCheckin() {
+            closeCheckinModal();
+            showToast("🎉 잠실 야구장 직관 인증 완료! +150 팬 포인트가 적립되었습니다.", "gold");
+            document.getElementById('tier-score-text').innerText = "1000 / 1000 P";
+            document.getElementById('tier-progress-bar').style.width = "100%";
+            document.getElementById('display-user-tier').innerText = "PLATINUM FAN TIER";
+            document.getElementById('user-tier-badge').innerText = "PLATINUM Fan";
+        }
+
+        function startPriorityBooking() {
+            showToast("🎟️ GOLD 팬 전용 15분 클린 선예매 권한으로 예매창에 진입합니다.", "gold");
+            switchTab('anti-macro');
+        }
+
+        function claimRewardTicket() {
+            showToast("✅ 암행어사 보상 티켓 결제가 완료되었습니다! (정가 15,000원)", "success");
+        }
+
+        function handleReportSubmit(e) {
+            e.preventDefault();
+            closeReportModal();
+            showToast("⚔️ 암표 신고가 접수되었습니다. 매크로 내역 대조 후 보상 구매권이 발급됩니다.", "error");
+
+            // Add new reported item to UI
+            const container = document.getElementById('report-list-container');
+            const newItem = document.createElement('div');
+            newItem.className = "bg-slate-950/80 border border-slate-800/80 rounded-2xl p-4 space-y-3";
+            newItem.innerHTML = `
+                <div class="flex flex-wrap justify-between items-start gap-2">
+                    <div>
+                        <span class="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded font-mono">신고번호 #REP-9088</span>
+                        <h4 class="font-bold text-white text-sm mt-1">방금 접수된 제보 건 (대조 진행 중)</h4>
+                    </div>
+                    <span class="text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 px-3 py-1 rounded-full font-bold animate-pulse">
+                        <i class="fa-solid fa-clock mr-1"></i>검증 대기 중
+                    </span>
+                </div>
+            `;
+            container.prepend(newItem);
+        }
+
+        // Anti-Macro Seat Generator & Simulator Logic
+        function initSeatGrid() {
+            const grid = document.getElementById('stadium-seat-grid');
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= 18; i++) {
+                const btn = document.createElement('button');
+                const isDecoy = (i === 4 || i === 11);
+                const isBooked = (i === 2 || i === 8 || i === 15);
+
+                if (isDecoy) {
+                    btn.className = "decoy-seat bg-rose-500/20 text-rose-300 font-mono text-xs py-2.5 rounded-xl font-bold border border-rose-500/40";
+                    btn.innerText = `D-${i}`;
+                    btn.onclick = () => handleSeatClick(i, true);
+                } else if (isBooked) {
+                    btn.className = "bg-slate-800/80 text-slate-600 font-mono text-xs py-2.5 rounded-xl border border-slate-800 cursor-not-allowed";
+                    btn.innerText = `X`;
+                    btn.disabled = true;
+                } else {
+                    btn.className = "bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 border border-emerald-500/40 font-mono text-xs py-2.5 rounded-xl transition-all font-bold shadow-sm";
+                    btn.innerText = `A-${i}`;
+                    btn.onclick = () => handleSeatClick(i, false);
+                }
+                grid.appendChild(btn);
+            }
+        }
+
+        function toggleMacroBotMode() {
+            isMacroBot = !isMacroBot;
+            const btn = document.getElementById('macro-toggle-btn');
+            const speed = document.getElementById('telemetry-speed');
+            const curve = document.getElementById('telemetry-curve');
+            const risk = document.getElementById('telemetry-risk');
+
+            if (isMacroBot) {
+                btn.className = "bg-rose-600 text-white px-4 py-2 rounded-xl font-bold text-xs shadow-lg shadow-rose-600/30 animate-pulse";
+                btn.innerText = "ON (매크로 봇 작동 중)";
+                speed.innerText = "2 ms (기계적 직결)";
+                speed.className = "text-rose-400 font-bold";
+                curve.innerText = "직선 0px (Linear)";
+                curve.className = "text-rose-400 font-bold";
+                risk.innerText = "99% (매크로 감지됨)";
+                risk.className = "text-rose-400 font-bold";
+                showToast("⚠️ 매크로 봇 모드가 활성화되었습니다. 클릭 시 디코이 감지 및 블락을 테스트합니다.", "error");
+            } else {
+                btn.className = "bg-slate-800 text-slate-400 px-4 py-2 rounded-xl font-bold text-xs border border-slate-700";
+                btn.innerText = "OFF (사람 클릭)";
+                speed.innerText = "340 ms (정상)";
+                speed.className = "text-emerald-400 font-bold";
+                curve.innerText = "곡선 (Human)";
+                curve.className = "text-emerald-400 font-bold";
+                risk.innerText = "2% (안전)";
+                risk.className = "text-emerald-400 font-bold";
+                showToast("👤 정상 팬(사람) 클릭 모드로 변경되었습니다.", "info");
+            }
+        }
+
+        function handleSeatClick(seatNum, isDecoy) {
+            if (isMacroBot || isDecoy) {
+                showToast("⛔ [매크로 감지] 보이지 않는 디코이(Decoy) 미끼 좌석 클릭 감지! 해당 IP가 영구 차단되었습니다.", "error");
+            } else {
+                selectedSeat = seatNum;
+                showToast(`🪑 A-${seatNum} 클린 좌석이 선택되었습니다. 결제를 진행해주세요.`, "success");
+            }
+        }
+
+        function simulateBookingAttempt() {
+            if (isMacroBot) {
+                showToast("⛔ 매크로 트래픽 차단 완료. 사람이 아닌 접근은 결제 단계 진입이 불가능합니다.", "error");
+            } else if (!selectedSeat) {
+                showToast("좌석을 먼저 선택해주세요.", "info");
+            } else {
+                showToast("🎉 [GOLD 팬 우대] 매크로 검증 완료! 정가 15,000원에 정상 발권되었습니다.", "gold");
+            }
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            initSeatGrid();
+        };
+    </script>
+</body>
+</html>
